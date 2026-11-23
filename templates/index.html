@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ACEest Functional Fitness</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #263238;
+            --muted: #65727a;
+            --paper: #f7f8f8;
+            --panel: #ffffff;
+            --line: #d9e0e3;
+            --accent: #b57b19;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background: var(--panel);
+            border-bottom: 1px solid var(--line);
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            width: min(1100px, calc(100% - 3rem));
+            margin: 0 auto;
+        }
+
+        header p {
+            margin: 0 0 .4rem;
+            color: var(--accent);
+            font-size: .8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3 { margin-top: 0; }
+        h1 { margin-bottom: .4rem; font-size: 2rem; }
+        header .subtitle { margin: 0; color: var(--muted); line-height: 1.5; }
+
+        main { padding: 2rem 0 3rem; }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric, .program-card, .detail {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+        }
+
+        .metric { padding: .9rem 1rem; }
+        .metric strong { display: block; color: var(--muted); font-size: .75rem; text-transform: uppercase; }
+        .metric span { display: block; margin-top: .35rem; font-size: 1.15rem; }
+
+        .section-heading { margin-bottom: 1rem; }
+        .section-heading p { margin: 0; color: var(--muted); line-height: 1.5; }
+
+        .programs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .program-card { padding: 1rem 1.2rem; border-left: 5px solid var(--program-color); }
+        .program-card h3 { margin-bottom: .75rem; font-size: 1.15rem; }
+        .program-card a { color: var(--accent); font-weight: 700; text-decoration: none; }
+        .program-card a:hover { color: var(--accent); }
+
+        .detail { margin-top: 2rem; padding: 1.25rem; }
+        .detail h2 { margin-bottom: 1rem; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .detail h3 { color: var(--muted); font-size: .8rem; text-transform: uppercase; }
+        .detail pre { margin: 0; white-space: pre-wrap; font: 1rem/1.7 Arial, sans-serif; }
+
+        .profile-form { margin-top: 2rem; padding: 1.25rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .field { display: flex; flex-direction: column; gap: .35rem; }
+        .field label { color: var(--muted); font-size: .8rem; font-weight: 700; }
+        .field input, .field select { border: 1px solid var(--line); border-radius: 4px; padding: .65rem; color: var(--ink); font: inherit; }
+        .form-actions { margin-top: 1rem; display: flex; gap: .75rem; align-items: center; }
+        button, .reset-link { border: 0; border-radius: 4px; padding: .65rem 1rem; font: inherit; text-decoration: none; cursor: pointer; }
+        button { background: var(--accent); color: #fff; }
+        .reset-link { color: var(--muted); }
+        .error { margin: 1rem 0 0; color: #a12d2d; font-weight: 700; }
+        .saved { margin: 1rem 0 0; color: #218c5a; font-weight: 700; }
+        .status { margin: 1rem 0 0; color: #218c5a; font-weight: 700; }
+        .client-list { margin-top: 2rem; padding: 1.25rem; overflow-x: auto; }
+        .client-list-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+        .client-list-header a { color: var(--accent); font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { border-bottom: 1px solid var(--line); padding: .7rem .5rem; text-align: left; vertical-align: top; }
+        th { color: var(--muted); font-size: .75rem; text-transform: uppercase; }
+        .progress { min-width: 100px; height: .5rem; margin-top: .25rem; background: #e8edef; border-radius: 4px; }
+        .progress span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+        .progress-link { color: var(--accent); font-weight: 700; }
+        .chart { display: flex; align-items: end; gap: 1rem; min-height: 180px; padding: 1rem 0 0; border-bottom: 1px solid var(--line); }
+        .chart-column { display: flex; flex: 1; flex-direction: column; align-items: center; gap: .35rem; height: 160px; justify-content: end; }
+        .chart-bar { width: min(44px, 80%); min-height: 2px; background: var(--accent); border-radius: 3px 3px 0 0; }
+        .chart-value, .chart-label { color: var(--muted); font-size: .75rem; }
+        .membership-status { display: inline-block; padding: .2rem .45rem; border-radius: 3px; font-size: .75rem; font-weight: 700; }
+        .membership-active { color: #176b43; background: #e4f3eb; }
+        .membership-expired { color: #9a2f2f; background: #f9e7e7; }
+        .membership-unset { color: var(--muted); background: #edf0f1; }
+        .history { margin-top: 1rem; overflow-x: auto; }
+        .history-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
+        .history-actions a { color: var(--accent); font-weight: 700; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .logout-button { margin: 0; background: transparent; border: 1px solid var(--line); color: var(--ink); }
+
+        @media (max-width: 700px) {
+            .container { width: min(100% - 2rem, 1100px); }
+            .metrics, .programs, .detail-grid { grid-template-columns: 1fr; }
+            header { padding: 2rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-row">
+                <div>
+                    <p>ACEest Fitness &amp; Gym</p>
+                    <h1>Functional fitness, clearly planned.</h1>
+                    <p class="subtitle">Choose a program to view its weekly workout and nutrition plan.</p>
+                </div>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <span>{{ username }}</span>
+                    <button class="logout-button" type="submit">Sign out</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="metrics" aria-label="Gym metrics">
+            <div class="metric"><strong>Capacity</strong><span>{{ metrics.capacity }}</span></div>
+            <div class="metric"><strong>Area</strong><span>{{ metrics.area }}</span></div>
+            <div class="metric"><strong>Break-even</strong><span>{{ metrics.break_even }}</span></div>
+        </section>
+
+        <section>
+            <div class="section-heading">
+                <h2>Program profiles</h2>
+                <p>Select a profile to view its workout and nutrition plan.</p>
+            </div>
+            <div class="programs">
+                {% for name, program in programs.items() %}
+                    <article class="program-card" style="--program-color: {{ program.color }}">
+                        <h3>{{ name }}</h3>
+                        <p>{{ program.description }}</p>
+                        <a href="{{ url_for('show_program', program_name=name) }}">View plan &rarr;</a>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="detail profile-form">
+            <h2>Client profile</h2>
+            <form method="post" action="{{ url_for('save_client') }}">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="name">Name</label>
+                        <input id="name" name="name" value="{{ client.name if client else '' }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="age">Age</label>
+                        <input id="age" name="age" type="number" min="1" value="{{ client.age if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="weight">Weight (kg)</label>
+                        <input id="weight" name="weight" type="number" min="0" step="0.1" value="{{ client.weight if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="height">Height (cm)</label>
+                        <input id="height" name="height" type="number" min="0" step="0.1" value="{{ client.height if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="program">Program</label>
+                        <select id="program" name="program" required>
+                            <option value="">Choose a program</option>
+                            {% for name in programs %}
+                                <option value="{{ name }}" {% if client and client.program == name %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="adherence">Weekly adherence (%)</label>
+                        <input id="adherence" name="adherence" type="number" min="0" max="100" value="{{ client.adherence if client else 0 }}">
+                    </div>
+                    <div class="field">
+                        <label for="notes">Coach notes</label>
+                        <input id="notes" name="notes" value="{{ client.notes if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="target_weight">Target weight (kg)</label>
+                        <input id="target_weight" name="target_weight" type="number" min="0" step="0.1" value="{{ client.target_weight if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="target_adherence">Target adherence (%)</label>
+                        <input id="target_adherence" name="target_adherence" type="number" min="0" max="100" value="{{ client.target_adherence if client else '' }}">
+                    </div>
+                    <div class="field">
+                        <label for="membership_expiry">Membership expiry</label>
+                        <input id="membership_expiry" name="membership_expiry" type="date" value="{{ client.membership_expiry if client else '' }}">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save client</button>
+                    <a class="reset-link" href="{{ url_for('home') }}">Reset</a>
+                </div>
+            </form>
+            <form class="form-actions" method="post" action="{{ url_for('load_client') }}">
+                <label for="load-name">Load saved client</label>
+                <select id="load-name" name="name" required>
+                    <option value="">Choose a client</option>
+                    {% for saved_client in clients %}
+                        <option value="{{ saved_client.name }}">{{ saved_client.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Load client</button>
+            </form>
+            <form class="form-actions" method="post" action="{{ url_for('save_progress') }}">
+                <input type="hidden" name="name" value="{{ client.name if client else '' }}">
+                <input type="hidden" name="adherence" value="{{ client.adherence if client else 0 }}">
+                <button type="submit">Save weekly progress</button>
+            </form>
+            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+            {% if client and client.calories is defined %}<p class="saved">Estimated calories: {{ client.calories }} kcal</p>{% endif %}
+            {% if status %}<p class="status">{{ status }}</p>{% endif %}
+            {% if summary %}<pre class="detail">CLIENT PROFILE
+--------------
+Name: {{ summary.name }}
+Age: {{ summary.age or '-' }}
+Weight: {{ summary.weight or '-' }} kg
+Program: {{ summary.program }}
+Calories: {{ summary.calories or '-' }} kcal/day
+Membership: {{ summary.membership_status or 'Not set' }}
+Membership expiry: {{ summary.membership_expiry or 'Not set' }}</pre>{% endif %}
+            {% if client %}
+                <div class="history-actions">
+                    <a href="{{ url_for('export_pdf_report', name=client.name) }}">Download PDF report</a>
+                    <a href="{{ url_for('check_membership', name=client.name) }}">Check membership</a>
+                </div>
+                <form class="form-actions" method="post" action="{{ url_for('generate_random_program', name=client.name) }}">
+                    <button type="submit">Generate AI program</button>
+                </form>
+                <form class="form-actions" method="post" action="{{ url_for('generate_client_program', name=client.name) }}">
+                    <label for="experience">Experience level</label>
+                    <select id="experience" name="experience" required>
+                        <option value="">Choose level</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                    <button type="submit">Generate AI program</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section class="detail client-list">
+            <div class="client-list-header">
+                <h2>Client list</h2>
+                <a href="{{ url_for('export_clients') }}">Export CSV</a>
+            </div>
+            {% if clients %}
+                <table>
+                    <thead>
+                        <tr><th>Name</th><th>Age</th><th>Weight</th><th>Program</th><th>Adherence</th><th>Membership</th><th>Notes</th><th>History</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for saved_client in clients %}
+                            <tr>
+                                <td>{{ saved_client.name }}</td>
+                                <td>{{ saved_client.age }}</td>
+                                <td>{{ saved_client.weight }} kg</td>
+                                <td>{{ saved_client.program }}</td>
+                                <td>{{ saved_client.adherence }}%<div class="progress"><span style="width: {{ saved_client.adherence|int }}%"></span></div></td>
+                                <td><span class="membership-status membership-{{ saved_client.membership_status|lower|replace(' ', '-') }}">{{ saved_client.membership_status }}</span>{% if saved_client.membership_expiry %}<br>{{ saved_client.membership_expiry }}{% endif %}</td>
+                                <td>{{ saved_client.notes }}</td>
+                                <td><a class="progress-link" href="{{ url_for('show_progress', name=saved_client.name) }}">Progress</a><br><a class="progress-link" href="{{ url_for('show_workouts', name=saved_client.name) }}">Workouts</a><br><a class="progress-link" href="{{ url_for('show_bmi', name=saved_client.name) }}">BMI</a><br><a class="progress-link" href="{{ url_for('check_membership', name=saved_client.name) }}">Membership</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="section-heading">No clients saved yet.</p>
+            {% endif %}
+        </section>
+
+        <section class="detail profile-form">
+            <h2>Log workout</h2>
+            <form method="post" action="{{ url_for('save_workout') }}">
+                <div class="form-grid">
+                    <div class="field"><label for="workout-client">Client</label><input id="workout-client" name="client_name" value="{{ client.name if client else '' }}" required></div>
+                    <div class="field"><label for="workout-date">Date</label><input id="workout-date" name="date" type="date" required></div>
+                    <div class="field"><label for="workout-type">Workout type</label><select id="workout-type" name="workout_type" required><option value="">Choose type</option><option>Strength</option><option>Hypertrophy</option><option>Conditioning</option><option>Mixed</option><option>Mobility</option></select></div>
+                    <div class="field"><label for="duration">Duration (min)</label><input id="duration" name="duration_min" type="number" min="0"></div>
+                    <div class="field"><label for="exercise">Exercise</label><input id="exercise" name="exercise_name"></div>
+                    <div class="field"><label for="sets">Sets</label><input id="sets" name="sets" type="number" min="0"></div>
+                    <div class="field"><label for="reps">Reps</label><input id="reps" name="reps" type="number" min="0"></div>
+                    <div class="field"><label for="exercise-weight">Exercise weight (kg)</label><input id="exercise-weight" name="exercise_weight" type="number" min="0" step="0.1"></div>
+                    <div class="field"><label for="workout-notes">Notes</label><input id="workout-notes" name="notes"></div>
+                </div>
+                <div class="form-actions"><button type="submit">Log workout</button></div>
+            </form>
+        </section>
+
+        <section class="detail profile-form">
+            <h2>Log body metrics</h2>
+            <form method="post" action="{{ url_for('save_metrics') }}">
+                <div class="form-grid">
+                    <div class="field"><label for="metrics-client">Client</label><input id="metrics-client" name="client_name" value="{{ client.name if client else '' }}" required></div>
+                    <div class="field"><label for="metrics-date">Date</label><input id="metrics-date" name="date" type="date" required></div>
+                    <div class="field"><label for="metrics-weight">Weight (kg)</label><input id="metrics-weight" name="weight" type="number" min="0" step="0.1"></div>
+                    <div class="field"><label for="waist">Waist (cm)</label><input id="waist" name="waist" type="number" min="0" step="0.1"></div>
+                    <div class="field"><label for="bodyfat">Body fat (%)</label><input id="bodyfat" name="bodyfat" type="number" min="0" step="0.1"></div>
+                </div>
+                <div class="form-actions"><button type="submit">Log metrics</button></div>
+            </form>
+        </section>
+
+        {% if workouts %}
+            <section class="detail">
+                <h2>Workout history</h2>
+                <div class="history"><table><thead><tr><th>Date</th><th>Type</th><th>Duration</th><th>Exercise</th><th>Sets/Reps</th><th>Notes</th></tr></thead><tbody>
+                    {% for workout in workouts %}<tr><td>{{ workout.date }}</td><td>{{ workout.workout_type }}</td><td>{{ workout.duration_min or '-' }} min</td><td>{{ workout.exercise_name or '-' }}</td><td>{{ workout.sets or '-' }} / {{ workout.reps or '-' }}</td><td>{{ workout.notes }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </section>
+        {% endif %}
+
+        {% if latest_metric %}
+            <section class="detail"><h2>Latest body metrics</h2><p>{{ latest_metric.date }} | Weight: {{ latest_metric.weight or '-' }} kg | Waist: {{ latest_metric.waist or '-' }} cm | Body fat: {{ latest_metric.bodyfat or '-' }}%</p></section>
+        {% endif %}
+
+        {% if weight_entries %}
+            <section class="detail">
+                <h2>Weight trend</h2>
+                <div class="chart" aria-label="Weight trend chart">
+                    {% for entry in weight_entries %}
+                        <div class="chart-column">
+                            <span class="chart-value">{{ entry.weight }} kg</span>
+                            <div class="chart-bar" style="height: {{ entry.chart_height }}%"></div>
+                            <span class="chart-label">{{ entry.date }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if membership %}
+            <section class="detail">
+                <h2>Membership status</h2>
+                <p><span class="membership-status membership-{{ membership.status|lower|replace(' ', '-') }}">{{ membership.status }}</span></p>
+                <p>Expiry: {{ membership.expiry or 'Not set' }}</p>
+                {% if membership.status == 'Active' %}<p>{{ membership.days_remaining }} days remaining.</p>{% endif %}
+            </section>
+        {% endif %}
+
+        {% if generated_program %}
+            <section class="detail"><h2>AI program generated</h2><p>{{ generated_program.category }}: <strong>{{ generated_program.detail }}</strong></p><p>Generated {{ generated_program.created_at }}</p></section>
+        {% endif %}
+
+        {% if generated_programs %}
+            <section class="detail">
+                <h2>Generated program history</h2>
+                <div class="history"><table><thead><tr><th>Type</th><th>Program</th><th>Generated at</th></tr></thead><tbody>
+                    {% for recommendation in generated_programs %}<tr><td>{{ recommendation.program_type }}</td><td>{{ recommendation.program_detail }}</td><td>{{ recommendation.created_at }}</td></tr>{% endfor %}
+                </tbody></table></div>
+            </section>
+        {% endif %}
+
+        {% if bmi %}
+            <section class="detail"><h2>BMI and risk information</h2><p>BMI: <strong>{{ bmi }}</strong> ({{ bmi_category }})</p><p>{{ bmi_risk }}</p></section>
+        {% endif %}
+
+        {% if progress_entries %}
+            <section class="detail">
+                <h2>Weekly adherence progress</h2>
+                <div class="chart" aria-label="Weekly adherence chart">
+                    {% for entry in progress_entries %}
+                        <div class="chart-column">
+                            <span class="chart-value">{{ entry.adherence }}%</span>
+                            <div class="chart-bar" style="height: {{ entry.adherence|int }}%"></div>
+                            <span class="chart-label">{{ entry.week }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if generated_plan %}
+            <section class="detail">
+                <h2>Generated workout plan</h2>
+                <div class="history"><table>
+                    <thead><tr><th>Day</th><th>Exercise</th><th>Sets</th><th>Reps</th></tr></thead>
+                    <tbody>
+                        {% for item in generated_plan %}
+                            <tr><td>{{ item.day }}</td><td>{{ item.exercise }}</td><td>{{ item.sets }}</td><td>{{ item.reps }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table></div>
+            </section>
+        {% endif %}
+
+        {% if selected_program %}
+            <section class="detail" aria-live="polite">
+                <h2>{{ selected_name }}</h2>
+                <p>{{ selected_program.description }}</p>
+                <div class="detail-grid">
+                    <div>
+                        <h3>Weekly workout chart</h3>
+                        <pre>{{ selected_program.workout }}</pre>
+                    </div>
+                    <div>
+                        <h3>Daily nutrition plan</h3>
+                        <pre>{{ selected_program.diet }}</pre>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+    </main>
+</body>
+</html>
