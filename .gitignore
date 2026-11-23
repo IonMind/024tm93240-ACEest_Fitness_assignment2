@@ -1,2 +1,7 @@
 aceest_fitness.db
 assignment
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
