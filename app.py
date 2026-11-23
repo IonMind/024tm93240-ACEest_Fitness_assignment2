@@ -14,6 +14,14 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("ACEEST_SECRET_KEY", "development-only-change-me")
 app.config["DATABASE"] = os.environ.get("ACEEST_DB_PATH", "aceest_fitness.db")
 
+if os.environ.get("ACEEST_ENV", "development").lower() == "production":
+    required_settings = ("ACEEST_SECRET_KEY", "ACEEST_DB_PATH", "ACEEST_ADMIN_USERNAME", "ACEEST_ADMIN_PASSWORD")
+    missing_settings = [name for name in required_settings if not os.environ.get(name, "").strip()]
+    if missing_settings:
+        raise RuntimeError(f"Missing production configuration: {', '.join(missing_settings)}")
+    if app.config["SECRET_KEY"] == "development-only-change-me" or os.environ["ACEEST_ADMIN_PASSWORD"] == "admin":
+        raise RuntimeError("Production credentials must not use development defaults.")
+
 SITE_METRICS = {
     "capacity": "150 users",
     "area": "10,000 sq ft",
@@ -57,8 +65,16 @@ PROGRAMS = {
     },
 }
 
+class DatabaseConnection(sqlite3.Connection):
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 def database_connection():
-    connection = sqlite3.connect(app.config["DATABASE"])
+    connection = sqlite3.connect(app.config["DATABASE"], factory=DatabaseConnection)
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -146,12 +162,13 @@ def initialize_database():
         }.items():
             if column not in client_columns:
                 connection.execute(f"ALTER TABLE clients ADD COLUMN {column} {definition}")
-        default_username = os.environ.get("ACEEST_ADMIN_USERNAME", "admin")
-        default_password = os.environ.get("ACEEST_ADMIN_PASSWORD", "admin")
-        connection.execute(
-            "INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)",
-            (default_username, generate_password_hash(default_password), "Admin"),
-        )
+        if connection.execute("SELECT 1 FROM users LIMIT 1").fetchone() is None:
+            default_username = os.environ.get("ACEEST_ADMIN_USERNAME", "admin")
+            default_password = os.environ.get("ACEEST_ADMIN_PASSWORD", "admin")
+            connection.execute(
+                "INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+                (default_username, generate_password_hash(default_password), "Admin"),
+            )
 
 
 def client_rows():
@@ -205,6 +222,20 @@ def page_context(**values):
     }
     context.update(values)
     return context
+
+
+@app.get("/healthz")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+def readiness():
+    try:
+        initialize_database()
+    except (OSError, sqlite3.Error):
+        return {"status": "not ready"}, 503
+    return {"status": "ready"}
 
 
 @app.get("/")

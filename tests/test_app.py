@@ -1,10 +1,71 @@
 import csv
 import io
+import os
+import sqlite3
+import subprocess
+import sys
 from contextlib import closing
 
 import pytest
 
 from app import database_connection
+
+
+def test_database_connection_closes_and_rolls_back(app):
+    with database_connection() as connection:
+        connection.execute("CREATE TABLE example (value TEXT)")
+    with pytest.raises(sqlite3.ProgrammingError):
+        connection.execute("SELECT 1")
+
+    with pytest.raises(ValueError):
+        with database_connection() as connection:
+            connection.execute("INSERT INTO example VALUES ('temporary')")
+            raise ValueError("rollback")
+
+    with database_connection() as connection:
+        assert connection.execute("SELECT COUNT(*) FROM example").fetchone()[0] == 0
+
+
+def test_health_and_readiness(client, app, tmp_path):
+    assert client.get("/healthz").get_json() == {"status": "ok"}
+    assert client.get("/readyz").get_json() == {"status": "ready"}
+    app.config["DATABASE"] = str(tmp_path / "missing" / "test.db")
+    assert client.get("/readyz").status_code == 503
+    assert client.get("/healthz").status_code == 200
+
+
+def test_existing_administrator_is_not_recreated(client, monkeypatch):
+    assert client.get("/readyz").status_code == 200
+    monkeypatch.setenv("ACEEST_ADMIN_USERNAME", "another-admin")
+    assert client.get("/readyz").status_code == 200
+    with database_connection() as connection:
+        usernames = [row[0] for row in connection.execute("SELECT username FROM users")]
+    assert usernames == ["test-admin"]
+
+
+def test_production_requires_explicit_safe_configuration(tmp_path):
+    environment = os.environ.copy()
+    for name in ("ACEEST_SECRET_KEY", "ACEEST_DB_PATH", "ACEEST_ADMIN_USERNAME", "ACEEST_ADMIN_PASSWORD"):
+        environment.pop(name, None)
+    environment["ACEEST_ENV"] = "production"
+    command = [sys.executable, "-c", "import app"]
+    missing = subprocess.run(command, env=environment, capture_output=True, text=True)
+    assert missing.returncode != 0
+    assert "Missing production configuration" in missing.stderr
+
+    environment.update(
+        ACEEST_SECRET_KEY="test-production-secret",
+        ACEEST_DB_PATH=str(tmp_path / "production.db"),
+        ACEEST_ADMIN_USERNAME="test-admin",
+        ACEEST_ADMIN_PASSWORD="admin",
+    )
+    unsafe = subprocess.run(command, env=environment, capture_output=True, text=True)
+    assert unsafe.returncode != 0
+    assert "must not use development defaults" in unsafe.stderr
+
+    environment["ACEEST_ADMIN_PASSWORD"] = "test-password"
+    configured = subprocess.run(command, env=environment, capture_output=True, text=True)
+    assert configured.returncode == 0, configured.stderr
 
 
 def test_protected_route_redirects_to_login(client):
