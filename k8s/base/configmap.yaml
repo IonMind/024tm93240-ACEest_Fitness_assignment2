@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aceest-config
+data:
+  ACEEST_ENV: production
+  ACEEST_DB_PATH: /data/aceest_fitness.db
