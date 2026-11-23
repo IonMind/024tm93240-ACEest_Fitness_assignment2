@@ -34,18 +34,22 @@ pipeline {
 
         stage('Test in container') {
             steps {
-                                sh '''
-                                        docker run --rm --user "$(id -u):$(id -g)" -e ACEEST_ENV=development \
-                                            --mount "type=bind,source=$WORKSPACE,target=/workspace" \
-                                            --workdir /workspace "$TEST_IMAGE" python -m pytest \
-                                            -p no:cacheprovider --cov=app --cov-report=term-missing \
-                      --cov-report=xml:coverage.xml --junitxml=test-results.xml
-                '''
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE', catchInterruptions: false) {
+                    sh '''
+                        docker run --rm --user "$(id -u):$(id -g)" -e ACEEST_ENV=development \
+                          --mount "type=bind,source=$WORKSPACE,target=/workspace" \
+                          --workdir /workspace "$TEST_IMAGE" python -m pytest \
+                          -p no:cacheprovider --cov=app --cov-report=term-missing \
+                          --cov-report=xml:coverage.xml --junitxml=test-results.xml
+                    '''
+                }
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'test-results.xml'
-                    archiveArtifacts allowEmptyArchive: true, artifacts: 'coverage.xml'
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE', catchInterruptions: false) {
+                        junit allowEmptyResults: true, testResults: 'test-results.xml'
+                        archiveArtifacts allowEmptyArchive: true, artifacts: 'coverage.xml'
+                    }
                 }
             }
         }
@@ -53,21 +57,23 @@ pipeline {
         stage('SonarQube Cloud quality gate') {
             when { branch 'main' }
             steps {
-                script {
-                    def scannerHome = tool 'sonar-scanner'
-                    withEnv(["SCANNER_HOME=${scannerHome}"]) {
-                        withSonarQubeEnv(installationName: 'sonarqube-cloud', credentialsId: 'sonarqube-token') {
-                            withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                                sh '''
-                                    set +x
-                                    : "${SONAR_ORGANIZATION:?SonarQube organization is required}"
-                                    : "${SONAR_PROJECT_KEY:?SonarQube project key is required}"
-                                    set -- "-Dsonar.organization=$SONAR_ORGANIZATION" "-Dsonar.projectKey=$SONAR_PROJECT_KEY" '-Dsonar.qualitygate.wait=true'
-                                    if [ -n "$SONAR_REGION" ]; then
-                                        set -- "$@" "-Dsonar.region=$SONAR_REGION"
-                                    fi
-                                    "$SCANNER_HOME/bin/sonar-scanner" "$@"
-                                '''
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE', catchInterruptions: false) {
+                    script {
+                        def scannerHome = tool 'sonar-scanner'
+                        withEnv(["SCANNER_HOME=${scannerHome}"]) {
+                            withSonarQubeEnv(installationName: 'sonarqube-cloud', credentialsId: 'sonarqube-token') {
+                                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                                    sh '''
+                                        set +x
+                                        : "${SONAR_ORGANIZATION:?SonarQube organization is required}"
+                                        : "${SONAR_PROJECT_KEY:?SonarQube project key is required}"
+                                        set -- "-Dsonar.organization=$SONAR_ORGANIZATION" "-Dsonar.projectKey=$SONAR_PROJECT_KEY" '-Dsonar.qualitygate.wait=true'
+                                        if [ -n "$SONAR_REGION" ]; then
+                                            set -- "$@" "-Dsonar.region=$SONAR_REGION"
+                                        fi
+                                        "$SCANNER_HOME/bin/sonar-scanner" "$@"
+                                    '''
+                                }
                             }
                         }
                     }
