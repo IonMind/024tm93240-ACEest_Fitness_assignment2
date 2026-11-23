@@ -53,17 +53,24 @@ pipeline {
         stage('SonarQube Cloud quality gate') {
             when { branch 'main' }
             steps {
-                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                        set +x
-                        : "${SONAR_ORGANIZATION:?SonarQube organization is required}"
-                        : "${SONAR_PROJECT_KEY:?SonarQube project key is required}"
-                        set -- "-Dsonar.organization=$SONAR_ORGANIZATION" "-Dsonar.projectKey=$SONAR_PROJECT_KEY" '-Dsonar.qualitygate.wait=true'
-                        if [ -n "$SONAR_REGION" ]; then
-                            set -- "$@" "-Dsonar.region=$SONAR_REGION"
-                        fi
-                        docker run --rm --user "$(id -u):$(id -g)" -e SONAR_TOKEN -e SONAR_USER_HOME=/tmp/.sonar --mount "type=bind,source=$WORKSPACE,target=/usr/src" sonarsource/sonar-scanner-cli:latest "$@"
-                    '''
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+                    withEnv(["SCANNER_HOME=${scannerHome}"]) {
+                        withSonarQubeEnv(installationName: 'sonarqube-cloud', credentialsId: 'sonarqube-token') {
+                            withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                                sh '''
+                                    set +x
+                                    : "${SONAR_ORGANIZATION:?SonarQube organization is required}"
+                                    : "${SONAR_PROJECT_KEY:?SonarQube project key is required}"
+                                    set -- "-Dsonar.organization=$SONAR_ORGANIZATION" "-Dsonar.projectKey=$SONAR_PROJECT_KEY" '-Dsonar.qualitygate.wait=true'
+                                    if [ -n "$SONAR_REGION" ]; then
+                                        set -- "$@" "-Dsonar.region=$SONAR_REGION"
+                                    fi
+                                    "$SCANNER_HOME/bin/sonar-scanner" "$@"
+                                '''
+                            }
+                        }
+                    }
                 }
             }
         }
