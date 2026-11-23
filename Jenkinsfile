@@ -103,6 +103,7 @@ pipeline {
         stage('Deploy to Minikube') {
             when { branch 'main' }
             steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE', catchInterruptions: false) {
                 sh '''
                     kubectl config get-contexts minikube -o name
                     kubectl --context=minikube -n "$KUBE_NAMESPACE" get secret aceest-secrets -o name
@@ -123,6 +124,7 @@ pipeline {
                     fi
                     exit 1
                 '''
+                }
             }
         }
     }
